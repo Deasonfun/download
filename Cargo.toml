@@ -1,0 +1,8 @@
+[package]
+name = "download"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+yt-dlp = "1.2.3"
+tokio = { version = "1", features = ["full"] }
