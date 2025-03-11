@@ -6,3 +6,6 @@ edition = "2021"
 [dependencies]
 tokio = { version = "1", features = ["full"] }
 csv = "1.3.1"
+axum = { version = "0.8.1", features = ["macros"] }
+rusqlite = "0.33.0"
+askama = "0.12.1"
