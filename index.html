@@ -11,26 +11,26 @@
     <body>
         <h1>Video Downloader</h1>
 
-        <form>
-            <div class="input-group mb-3">
-                <span class="input-group-text" id="basic-addon1">URL: </span>
-                <input
-                    id="url-input"
-                    type="text"
-                    class="form-control"
-                    aria-describedby="basic-addon1"
-                />
-            </div>
-            <button
-                hx-get="{% url '/download_add/?<url-input>' %}"
-                hx-swap="innerHTML"
-                hx-target="#download-queue-body"
-                type="submit"
-                class="btn btn-primary"
-            >
-                Add
-            </button>
-        </form>
+        <div class="input-group mb-3">
+            <span class="input-group-text" id="basic-addon1">URL: </span>
+            <input
+                id="url-input"
+                type="text"
+                class="form-control"
+                aria-describedby="basic-addon1"
+            />
+        </div>
+        <button
+            id="add-btn"
+            hx-get=""
+            hx-on:click="updateGet()"
+            hx-swap="innerHTML"
+            hx-target="#download-queue-body"
+            type="submit"
+            class="btn btn-primary"
+        >
+            Add
+        </button>
 
         <h3>Download Queue:</h3>
 
@@ -49,5 +49,26 @@
             crossorigin="anonymous"
         ></script>
         <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+        <script>
+            document.body.addEventListener("htmx:beforeSend", (evt) => {
+                console.log(evt);
+                let intputVal = document.getElementById("url-input").value;
+                const url =
+                    "http://localhost:6969/download_add/" +
+                    encodedURIComponent(intputVal);
+                evt.detail.pathInfo.requestPath = url;
+                //document
+                //    .getElementById("add-btn")
+                //    .setAttribute(
+                //        "hx-get",
+                //        "http://localhost:6969/download_add/" +
+                //            encodeURIComponent(intputVal),
+                //    );
+                console.log(intputVal);
+            });
+        </script>
+        <script>
+            htmx.logAll();
+        </script>
     </body>
 </html>
