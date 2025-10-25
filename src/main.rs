@@ -12,7 +12,7 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut rdr = csv::Reader::from_reader(videos_list_csv);
     for result in rdr.records() {
         let record = result?;
-        println!("{:?}", &record[0]);
+
         let output = Command::new(&dlp_bin)
             .arg(&record[0])
             .output()
