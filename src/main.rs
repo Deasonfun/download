@@ -14,9 +14,9 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let record = result?;
 
         let output = Command::new(&dlp_bin)
-            .arg(&record[0])
-            .output()
-            .expect("youtube-dlp command failed");
+            .args(["-f mp4", &record[0]])
+            .output()?;
+        println!("{:?}", output);
         println!("{}", output.status);
     }
 
