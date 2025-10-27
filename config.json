@@ -1,4 +1,6 @@
 {
+    "audio_export": false,
+    "audio_format": "mp3",
     "videos":
     [
         "https://www.youtube.com/watch?v=EwTZ2xpQwpA",
