@@ -1,4 +1,5 @@
 {
+    "download_dest": "./downloads",
     "video_format": "mp4",
     "audio_export": false,
     "audio_format": "mp3",

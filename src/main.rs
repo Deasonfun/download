@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 struct Config {
+    download_dest: String,
     video_format: String,
     audio_export: bool,
     audio_format: String,
@@ -23,8 +24,12 @@ pub async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let config_json = fs::read_to_string("config.json")?;
     let config: Config = serde_json::from_str(&config_json)?;
 
+    
+    let mut command_args = vec!["--no-part"];
 
-    let mut command_args = vec![];
+    command_args.push("-P");
+    command_args.push(&config.download_dest);
+    println!("Download dest: {}", config.download_dest);
 
     command_args.push("-f");
     command_args.push(config.video_format.as_str());
@@ -55,7 +60,6 @@ pub async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
             .arg(record.clone())
             .output()?;
         println!("{}", output.status);
-        println!("{:?}", output);
     }
 
     Ok(())
