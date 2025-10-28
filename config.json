@@ -3,6 +3,7 @@
     "video_format": "mp4",
     "audio_export": false,
     "audio_format": "mp3",
+    "thumbnail_export": false,
     "videos":
     [
         "https://www.youtube.com/watch?v=EwTZ2xpQwpA",

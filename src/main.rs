@@ -1,6 +1,7 @@
 use std::fs::{self};
 use std::path::PathBuf;
 use std::process::Command;
+use std::io::Write;
 
 use serde::{Deserialize, Serialize};
 
@@ -10,6 +11,7 @@ struct Config {
     video_format: String,
     audio_export: bool,
     audio_format: String,
+    thumbnail_export: bool,
     videos: Vec<String>,
 }
 
@@ -49,6 +51,14 @@ pub async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         false => ()
     }
 
+    match config.thumbnail_export {
+        true => {
+            println!("Thumbnail export: enabled");
+            command_args.push("--write-thumbnail");
+        },
+        false => ()
+    }
+
 
     for result in config.videos {
         let record = result;
@@ -59,6 +69,13 @@ pub async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
             .args(&command_args)
             .arg(record.clone())
             .output()?;
+        println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
+        let mut log_file = fs::OpenOptions::new()
+            .append(true)
+            .create(true)
+            .open("output.log")?;
+        log_file.write_all(&output.stdout)?;
+        log_file.write_all(&output.stderr)?;
         println!("{}", output.status);
     }
 
