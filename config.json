@@ -1,7 +1,7 @@
 {
     "download_dest": "./downloads",
     "video_format": "mp4",
-    "audio_export": false,
+    "audio_export": true,
     "audio_format": "mp3",
     "thumbnail_export": false,
     "videos":

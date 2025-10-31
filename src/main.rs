@@ -60,6 +60,7 @@ pub async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     }
 
 
+    fs::write("output.log", "")?;
     for result in config.videos {
         let record = result;
 
@@ -74,8 +75,10 @@ pub async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
             .append(true)
             .create(true)
             .open("output.log")?;
+        log_file.write_all(format!("Processing URL: {}\n", record).as_bytes())?;
         log_file.write_all(&output.stdout)?;
         log_file.write_all(&output.stderr)?;
+        log_file.write_all(b"\n\n\n")?;
         println!("{}", output.status);
     }
 
