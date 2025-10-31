@@ -5,6 +5,13 @@ use std::io::Write;
 
 use serde::{Deserialize, Serialize};
 
+use axum::{
+    routing::get,
+    Router,
+    response::Html,
+    extract::Path,
+};
+
 #[derive(Serialize, Deserialize)]
 struct Config {
     download_dest: String,
@@ -15,8 +22,37 @@ struct Config {
     videos: Vec<String>,
 }
 
+async fn handler() -> Html<String> {
+    Html(fs::read_to_string("index.html").unwrap())
+}
+
+async fn test_handler(Path(url): Path<String>) -> Html<String> {
+    println!("Received URL: {}", url);
+    let config_json = fs::read_to_string("config.json").unwrap();
+    let mut config: Config = serde_json::from_str(&config_json).unwrap();
+
+    let mut vids_list = vec![];
+    for vid in config.videos {
+        let vid_component = fs::read_to_string("video_list_component.html").unwrap();
+        let vid_component_filled = vid_component.replace("%VIDEO_URL%", &vid);
+        vids_list.push(vid_component_filled);
+    }
+
+    Html(vids_list.join("\n"))
+}
+
 #[tokio::main]
 pub async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
+
+    let app = Router::new()
+    .route("/", get(handler))
+    .route("/add/{url}", get(test_handler));
+
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
+        .await
+        .unwrap();
+    println!("Listening on {}", listener.local_addr().unwrap());
+    axum::serve(listener, app).await.unwrap();
 
     let execs_dir = PathBuf::from("libs");
 
