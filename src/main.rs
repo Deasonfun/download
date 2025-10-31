@@ -3,13 +3,15 @@ use std::path::PathBuf;
 use std::process::Command;
 use std::io::Write;
 
+use axum::response::IntoResponse;
 use serde::{Deserialize, Serialize};
 
 use axum::{
     routing::get,
     Router,
     response::Html,
-    extract::Path,
+    extract::Query,
+    debug_handler,
 };
 
 #[derive(Serialize, Deserialize)]
@@ -22,45 +24,64 @@ struct Config {
     videos: Vec<String>,
 }
 
+#[derive(Deserialize)]
+struct DLQuery {
+    url: String,
+}
+
+enum DownloadError {
+    IoError(std::io::Error),
+    SerdeError(serde_json::Error),
+}
+
+impl IntoResponse for DownloadError {
+    fn into_response(self) -> axum::response::Response {
+        match self {
+            DownloadError::IoError(e) => {
+                let body = format!("IO Error: {}", e);
+                (axum::http::StatusCode::INTERNAL_SERVER_ERROR, body).into_response()
+            }
+            DownloadError::SerdeError(e) => {
+                let body = format!("Serialization Error: {}", e);
+                (axum::http::StatusCode::INTERNAL_SERVER_ERROR, body).into_response()
+            }
+        }
+    }
+}
+
 async fn handler() -> Html<String> {
     Html(fs::read_to_string("index.html").unwrap())
 }
 
-async fn test_handler(Path(url): Path<String>) -> Html<String> {
-    println!("Received URL: {}", url);
+async fn test_handler(Query(params): Query<DLQuery>) -> Html<String> {
+    println!("Received URL: {}", params.url);
     let config_json = fs::read_to_string("config.json").unwrap();
     let mut config: Config = serde_json::from_str(&config_json).unwrap();
 
+    config.videos.push(params.url);
+
+    let updated_config = serde_json::to_string_pretty(&config).unwrap();
+    fs::write("config.json", updated_config).unwrap();
+
     let mut vids_list = vec![];
-    for vid in config.videos {
+    for vid in &config.videos {
         let vid_component = fs::read_to_string("video_list_component.html").unwrap();
         let vid_component_filled = vid_component.replace("%VIDEO_URL%", &vid);
         vids_list.push(vid_component_filled);
     }
+    println!("Updated video list: {:?}", config.videos);
 
     Html(vids_list.join("\n"))
 }
 
-#[tokio::main]
-pub async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
-
-    let app = Router::new()
-    .route("/", get(handler))
-    .route("/add/{url}", get(test_handler));
-
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
-        .await
-        .unwrap();
-    println!("Listening on {}", listener.local_addr().unwrap());
-    axum::serve(listener, app).await.unwrap();
-
+async fn download() -> Result<(), DownloadError> {
     let execs_dir = PathBuf::from("libs");
 
     let dlp_bin = execs_dir.join("yt-dlp");
     let ffmpeg_bin = execs_dir.join("ffmpeg");
 
-    let config_json = fs::read_to_string("config.json")?;
-    let config: Config = serde_json::from_str(&config_json)?;
+    let config_json = fs::read_to_string("config.json").unwrap();
+    let config: Config = serde_json::from_str(&config_json).unwrap();
 
     
     let mut command_args = vec!["--no-part"];
@@ -104,16 +125,32 @@ pub async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let output = Command::new(&dlp_bin)
             .args(&command_args)
             .arg(record.clone())
-            .output()?;
+            .output().unwrap();
         println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
         let mut log_file = fs::OpenOptions::new()
             .append(true)
             .create(true)
-            .open("output.log")?;
-        log_file.write_all(&output.stdout)?;
-        log_file.write_all(&output.stderr)?;
+            .open("output.log").unwrap();
+        log_file.write_all(&output.stdout).unwrap();
+        log_file.write_all(&output.stderr).unwrap();
         println!("{}", output.status);
     }
+    Ok(())
+}
+
+#[tokio::main]
+pub async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
+
+    let app = Router::new()
+    .route("/", get(handler))
+    .route("/add/", get(test_handler))
+    .route("/download/", get(download));
+
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
+        .await
+        .unwrap();
+    println!("Listening on {}", listener.local_addr().unwrap());
+    axum::serve(listener, app).await.unwrap();
 
     Ok(())
 }

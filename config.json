@@ -1,12 +1,11 @@
 {
-    "download_dest": "./downloads",
-    "video_format": "mp4",
-    "audio_export": false,
-    "audio_format": "mp3",
-    "thumbnail_export": false,
-    "videos":
-    [
-        "https://www.youtube.com/watch?v=EwTZ2xpQwpA",
-        "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-    ]
+  "download_dest": "./downloads",
+  "video_format": "mp4",
+  "audio_export": false,
+  "audio_format": "mp3",
+  "thumbnail_export": false,
+  "videos": [
+    "https://www.youtube.com/watch?v=EwTZ2xpQwpA",
+    "https://www.youtube.com/watch?v=12LDsYpbLO4"
+  ]
 }

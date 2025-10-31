@@ -1,9 +1,16 @@
 <html>
       <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"></script>
     <body>
-        <textarea></textarea>
-        <button hx-get="/test/dQw4w9WgXcQ" hx-target="#content" hx-swap="innerHTML">Submit</button>
+        <textarea name="url-input"></textarea>
+        <button hx-get="/add/" hx-vals='js:{url: getQuery()}' hx-target="#content" hx-swap="innerHTML">Submit</button>
         <div id="content">
         </div>
+        <button hx-get="/download/" >Download</button>
     </body>
 </html>
+<script>
+    getQuery = () => {
+        const urlInput = document.getElementsByName("url-input")[0].value;
+        return urlInput;
+    }
+</script>
