@@ -1,16 +1,26 @@
 <html>
-      <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
     <body>
-        <textarea name="url-input"></textarea>
-        <button hx-get="/add/" hx-vals='js:{url: getQuery()}' hx-target="#content" hx-swap="innerHTML">Submit</button>
-        <div id="content">
+        <input name="url-input" class="form-control"></input>
+        <select name="video-format" class="form-select">
+            <option value="mp4">MP4</option>
+            <option value="webm">WEBM</option>
+            <option value="mkv">MKV</option>
+        </select>
+        <button hx-get="/add/" hx-vals='js:{url: getURL(), video_format: getVideoFormat()}' hx-target="#content" hx-swap="innerHTML" class="btn btn-primary mb-3">Submit</button>
+        <button hx-get="/clear/" hx-target="#content" hx-swap="innerHTML" class="btn btn-primary mb-3">Clear Queue</button>
+        <div id="content" hx-get="/video_list/" hx-swap="innerHTML" hx-trigger="load">
         </div>
-        <button hx-get="/download/" >Download</button>
+        <button hx-get="/download/" hx-swap="none" class="btn btn-primary mb-3">Download</button>
     </body>
 </html>
 <script>
-    getQuery = () => {
-        const urlInput = document.getElementsByName("url-input")[0].value;
-        return urlInput;
+    getURL = () => {
+        return document.getElementsByName("url-input")[0].value;
+    }
+    getVideoFormat = () => {
+        return document.getElementsByName("video-format")[0].value;
     }
 </script>

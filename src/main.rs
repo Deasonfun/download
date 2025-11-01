@@ -27,21 +27,22 @@ struct Config {
 #[derive(Deserialize)]
 struct DLQuery {
     url: String,
+    video_format: String,
 }
 
-enum DownloadError {
+enum QueryError {
     IoError(std::io::Error),
     SerdeError(serde_json::Error),
 }
 
-impl IntoResponse for DownloadError {
+impl IntoResponse for QueryError {
     fn into_response(self) -> axum::response::Response {
         match self {
-            DownloadError::IoError(e) => {
+            QueryError::IoError(e) => {
                 let body = format!("IO Error: {}", e);
                 (axum::http::StatusCode::INTERNAL_SERVER_ERROR, body).into_response()
             }
-            DownloadError::SerdeError(e) => {
+            QueryError::SerdeError(e) => {
                 let body = format!("Serialization Error: {}", e);
                 (axum::http::StatusCode::INTERNAL_SERVER_ERROR, body).into_response()
             }
@@ -53,12 +54,14 @@ async fn handler() -> Html<String> {
     Html(fs::read_to_string("index.html").unwrap())
 }
 
-async fn test_handler(Query(params): Query<DLQuery>) -> Html<String> {
+async fn add_video(Query(params): Query<DLQuery>) -> Html<String> {
     println!("Received URL: {}", params.url);
+    println!("Video Format: {:?}", params.video_format);
     let config_json = fs::read_to_string("config.json").unwrap();
     let mut config: Config = serde_json::from_str(&config_json).unwrap();
 
     config.videos.push(params.url);
+    config.video_format = params.video_format;
 
     let updated_config = serde_json::to_string_pretty(&config).unwrap();
     fs::write("config.json", updated_config).unwrap();
@@ -74,7 +77,33 @@ async fn test_handler(Query(params): Query<DLQuery>) -> Html<String> {
     Html(vids_list.join("\n"))
 }
 
-async fn download() -> Result<(), DownloadError> {
+
+#[debug_handler]
+async fn get_video_list() -> Html<String> {
+    let config_json = fs::read_to_string("config.json").unwrap();
+    let config: Config = serde_json::from_str(&config_json).unwrap();
+    
+    let mut vids_list = vec![];
+    for vid in &config.videos {
+        let vid_component = fs::read_to_string("video_list_component.html").unwrap();
+        let vid_component_filled = vid_component.replace("%VIDEO_URL%", &vid);
+        vids_list.push(vid_component_filled);
+    }
+    println!("Updated video list: {:?}", config.videos);
+
+    Html(vids_list.join("\n"))
+}
+
+async fn clear_queue() -> Html<String> {
+    let config_json = fs::read_to_string("config.json").unwrap();
+    let mut config: Config = serde_json::from_str(&config_json).unwrap();
+    config.videos = [].to_vec();
+    let updated_config = serde_json::to_string_pretty(&config).unwrap();
+    fs::write("config.json", updated_config).unwrap();
+    Html("".to_string())
+}
+
+async fn download() -> Result<(), QueryError> {
     let execs_dir = PathBuf::from("libs");
 
     let dlp_bin = execs_dir.join("yt-dlp");
@@ -143,7 +172,9 @@ pub async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     let app = Router::new()
     .route("/", get(handler))
-    .route("/add/", get(test_handler))
+    .route("/add/", get(add_video))
+    .route("/video_list/", get(get_video_list))
+    .route("/clear/", get(clear_queue))
     .route("/download/", get(download));
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
