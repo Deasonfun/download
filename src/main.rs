@@ -28,6 +28,8 @@ struct Config {
 struct DLQuery {
     url: String,
     video_format: String,
+    audio_export: bool,
+    thumbnail_export: bool,
 }
 
 enum QueryError {
@@ -57,11 +59,15 @@ async fn handler() -> Html<String> {
 async fn add_video(Query(params): Query<DLQuery>) -> Html<String> {
     println!("Received URL: {}", params.url);
     println!("Video Format: {:?}", params.video_format);
+    println!("Export Audio: {:?}", params.audio_export);
+    println!("Export Audio: {:?}", params.thumbnail_export);
     let config_json = fs::read_to_string("config.json").unwrap();
     let mut config: Config = serde_json::from_str(&config_json).unwrap();
 
     config.videos.push(params.url);
     config.video_format = params.video_format;
+    config.audio_export = params.audio_export;
+    config.thumbnail_export = params.thumbnail_export;
 
     let updated_config = serde_json::to_string_pretty(&config).unwrap();
     fs::write("config.json", updated_config).unwrap();

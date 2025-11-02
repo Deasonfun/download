@@ -9,8 +9,28 @@
             <option value="webm">WEBM</option>
             <option value="mkv">MKV</option>
         </select>
-        <button hx-get="/add/" hx-vals='js:{url: getURL(), video_format: getVideoFormat()}' hx-target="#content" hx-swap="innerHTML" class="btn btn-primary mb-3">Submit</button>
+        <ul class="list-group">
+            <li class="list-group-item">
+                <input class="form-check-input me-1" type="checkbox" value="" id="audio-export-check">
+                <label class="form-check-label" for="firstCheckbox">Export audio</label>
+            </li>
+            <li class="list-group-item">
+                <input class="form-check-input me-1" type="checkbox" value="" id="thumb-export-check">
+                <label class="form-check-label" for="secondCheckbox">Export thumbnail</label>
+            </li>
+        </ul>
+        <select name="audio-format" class="form-select">
+            <option value="mp3">MP3</option>
+        </select>
+        <button 
+            hx-get="/add/" 
+            hx-vals='js:{url: getURL(), video_format: getVideoFormat(), audio_export: getExportAudio(), thumbnail_export: getExportThumb()}' 
+            hx-target="#content" 
+            hx-swap="innerHTML" 
+            class="btn btn-primary mb-3"
+        >Submit</button>
         <button hx-get="/clear/" hx-target="#content" hx-swap="innerHTML" class="btn btn-primary mb-3">Clear Queue</button>
+        
         <div id="content" hx-get="/video_list/" hx-swap="innerHTML" hx-trigger="load">
         </div>
         <button hx-get="/download/" hx-swap="none" class="btn btn-primary mb-3">Download</button>
@@ -22,5 +42,11 @@
     }
     getVideoFormat = () => {
         return document.getElementsByName("video-format")[0].value;
+    }
+    getExportAudio = () => {
+        return document.getElementById("audio-export-check").checked;
+    }
+    getExportThumb = () => {
+        return document.getElementById("thumb-export-check").checked;
     }
 </script>
