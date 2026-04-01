@@ -26,6 +26,7 @@ struct Config {
 enum CmdArgs {
     Add,
     Remove,
+    ExportAudio,
     None,
 }
 
@@ -34,6 +35,7 @@ impl CmdArgs {
         match arg {
             "-a" => CmdArgs::Add,
             "-r" => CmdArgs::Remove,
+            "-A" => CmdArgs::ExportAudio,
             _ => CmdArgs::None,
         }
     }
@@ -74,6 +76,21 @@ impl CmdArgs {
                     .unwrap();
                 } else {
                     println!("No URL input with -a");
+                }
+            }
+            CmdArgs::ExportAudio => {
+                if let Some(audio_format) = args.get(arg_num + 1) {
+                    let config_json = fs::read_to_string("config.json").unwrap();
+                    let mut config: Config = serde_json::from_str(&config_json).unwrap();
+                    config.audio_export = true;
+                    config.audio_format = audio_format.clone();
+                    let _ = fs::write(
+                        "config.json",
+                        serde_json::to_string_pretty(&config).unwrap(),
+                    )
+                    .unwrap();
+                } else {
+                    println!("No audio format given.");
                 }
             }
             CmdArgs::None => {}
