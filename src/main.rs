@@ -2,7 +2,7 @@ use std::env;
 use std::env::consts;
 use std::fs::{self, File};
 use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::Command;
 
 use serde::{Deserialize, Serialize};
@@ -25,6 +25,7 @@ struct Config {
 
 enum CmdArgs {
     Add,
+    Remove,
     None,
 }
 
@@ -32,19 +33,39 @@ impl CmdArgs {
     fn from_arg(arg: &str) -> Self {
         match arg {
             "-a" => CmdArgs::Add,
+            "-r" => CmdArgs::Remove,
             _ => CmdArgs::None,
         }
     }
     fn run(&self, args: Vec<String>, arg_num: usize) {
         match self {
             CmdArgs::Add => {
-                println!("adding....");
-
                 if let Some(url) = args.get(arg_num + 1) {
                     let config_json = fs::read_to_string("config.json").unwrap();
                     let mut config: Config = serde_json::from_str(&config_json).unwrap();
                     config.videos.push(url.clone());
-                    println!("{:#?}", config);
+
+                    let _ = fs::write(
+                        "config.json",
+                        serde_json::to_string_pretty(&config).unwrap(),
+                    )
+                    .unwrap();
+                } else {
+                    println!("No URL input with -a");
+                }
+            }
+            CmdArgs::Remove => {
+                if let Some(url) = args.get(arg_num + 1) {
+                    let config_json = fs::read_to_string("config.json").unwrap();
+                    let mut config: Config = serde_json::from_str(&config_json).unwrap();
+                    let r_url_index = match config.videos.binary_search(url) {
+                        Ok(i) => i,
+                        Err(_) => {
+                            println!("Cannot find URL {} in the queue.", url);
+                            return;
+                        }
+                    };
+                    config.videos.remove(r_url_index);
 
                     let _ = fs::write(
                         "config.json",
@@ -184,10 +205,7 @@ pub async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         );
     }
 
-    let cmd_args: Vec<String> = vec![];
-
     let args: Vec<String> = env::args().collect();
-    let mut arg_num = 0;
 
     for (i, arg) in args.iter().enumerate() {
         let cmd = CmdArgs::from_arg(&arg);
