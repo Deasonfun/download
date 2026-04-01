@@ -1,3 +1,4 @@
+use std::env;
 use std::env::consts;
 use std::fs::{self, File};
 use std::io::Write;
@@ -12,7 +13,7 @@ use zip::ZipArchive;
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 struct Config {
     download_dest: String,
     video_format: String,
@@ -22,103 +23,147 @@ struct Config {
     videos: Vec<String>,
 }
 
+enum CmdArgs {
+    Add,
+    None,
+}
+
+impl CmdArgs {
+    fn from_arg(arg: &str) -> Self {
+        match arg {
+            "-a" => CmdArgs::Add,
+            _ => CmdArgs::None,
+        }
+    }
+    fn run(&self, args: Vec<String>, arg_num: usize) {
+        match self {
+            CmdArgs::Add => {
+                println!("adding....");
+
+                if let Some(url) = args.get(arg_num + 1) {
+                    let config_json = fs::read_to_string("config.json").unwrap();
+                    let mut config: Config = serde_json::from_str(&config_json).unwrap();
+                    config.videos.push(url.clone());
+                    println!("{:#?}", config);
+
+                    let _ = fs::write(
+                        "config.json",
+                        serde_json::to_string_pretty(&config).unwrap(),
+                    )
+                    .unwrap();
+                } else {
+                    println!("No URL input with -a");
+                }
+            }
+            CmdArgs::None => {}
+        }
+    }
+}
+
+async fn download_libraries(
+    execs_dir: PathBuf,
+) -> std::result::Result<(), Box<dyn std::error::Error>> {
+    if consts::OS == "windows" {
+        println!("windows");
+
+        println!("Downloading libraries...");
+
+        std::fs::create_dir_all(&execs_dir)?;
+
+        let dlp = execs_dir.join("yt-dlp");
+        let mut exec = File::create(&dlp)?;
+
+        let response = reqwest::get(
+            "https://github.com/yt-dlp/yt-dlp/releases/download/2026.03.17/yt-dlp.exe",
+        )
+        .await?;
+        let bytes = response.bytes().await?;
+        exec.write_all(&bytes)?;
+
+        let ffmpeg = execs_dir.join("ffmpeg.zip");
+        let mut exec = File::create(&ffmpeg)?;
+
+        let response =
+                    reqwest::get("https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip")
+                    .await?;
+        let bytes = response.bytes().await?;
+        exec.write_all(&bytes)?;
+
+        let ffmpeg_file = File::open(&ffmpeg)?;
+
+        let mut decompressor = ZipArchive::new(ffmpeg_file)?;
+
+        decompressor.extract(&execs_dir)?;
+
+        let ffmpeg_bin_dir = PathBuf::from("libs/ffmpeg-master-latest-win64-gpl/bin");
+        let ffmpeg_bin = ffmpeg_bin_dir.join("ffmpeg.exe");
+
+        fs::copy(ffmpeg_bin, &execs_dir.join("ffmpeg.exe"))?;
+        let _ = fs::remove_file(PathBuf::from("libs/ffmpeg.zip"));
+        let _ = fs::remove_dir_all(PathBuf::from("libs/ffmpeg-master-latest-win64-gpl"));
+        Ok(())
+    } else {
+        //let yt_dlp_path = exec_dir.join("yt-dlp");
+        //let mut yt_dlp_dest = File::create(&yt_dlp_path);
+
+        println!("Downloading libraries...");
+
+        std::fs::create_dir_all(&execs_dir)?;
+
+        let dlp = execs_dir.join("yt-dlp");
+        let mut exec = File::create(&dlp)?;
+
+        let response =
+            reqwest::get("https://github.com/yt-dlp/yt-dlp/releases/download/2026.03.17/yt-dlp")
+                .await?;
+        let bytes = response.bytes().await?;
+        exec.write_all(&bytes)?;
+
+        #[cfg(unix)]
+        {
+            let mut perms = std::fs::metadata(&dlp)?.permissions();
+            perms.set_mode(0o755);
+            std::fs::set_permissions(&dlp, perms)?;
+        }
+
+        let ffmpeg = execs_dir.join("ffmpeg.tar.xz");
+        let mut exec = File::create(&ffmpeg)?;
+
+        let response =
+                        reqwest::get("https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz")
+                            .await?;
+        let bytes = response.bytes().await?;
+        exec.write_all(&bytes)?;
+
+        let ffmpeg_file = File::open(&ffmpeg)?;
+
+        let decompressor = XzDecoder::new(ffmpeg_file);
+        let mut archive = Archive::new(decompressor);
+        archive.unpack(&execs_dir)?;
+
+        let ffmpeg_bin_dir = PathBuf::from("libs/ffmpeg-master-latest-linux64-gpl/bin");
+        let ffmpeg_bin = ffmpeg_bin_dir.join("ffmpeg");
+
+        fs::copy(ffmpeg_bin, &execs_dir.join("ffmpeg"))?;
+        let _ = fs::remove_file(PathBuf::from("libs/ffmpeg.tar.xz"));
+        let _ = fs::remove_dir_all(PathBuf::from("libs/ffmpeg-master-latest-linux64-gpl"));
+
+        #[cfg(unix)]
+        {
+            let mut perms = std::fs::metadata(PathBuf::from("libs/ffmpeg"))?.permissions();
+            perms.set_mode(0o755);
+            std::fs::set_permissions(PathBuf::from("libs/ffmpeg"), perms)?;
+        }
+        Ok(())
+    }
+}
+
 #[tokio::main]
 pub async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let execs_dir = PathBuf::from("libs");
 
     if !execs_dir.exists() {
-        if consts::OS == "windows" {
-            println!("windows");
-
-            println!("Downloading libraries...");
-
-            std::fs::create_dir_all(&execs_dir)?;
-
-            let dlp = execs_dir.join("yt-dlp");
-            let mut exec = File::create(&dlp)?;
-
-            let response = reqwest::get(
-                "https://github.com/yt-dlp/yt-dlp/releases/download/2026.03.17/yt-dlp.exe",
-            )
-            .await?;
-            let bytes = response.bytes().await?;
-            exec.write_all(&bytes)?;
-
-            let ffmpeg = execs_dir.join("ffmpeg.zip");
-            let mut exec = File::create(&ffmpeg)?;
-
-            let response =
-                reqwest::get("https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip")
-                .await?;
-            let bytes = response.bytes().await?;
-            exec.write_all(&bytes)?;
-
-            let ffmpeg_file = File::open(&ffmpeg)?;
-
-            let mut decompressor = ZipArchive::new(ffmpeg_file)?;
-
-            decompressor.extract(&execs_dir)?;
-
-            let ffmpeg_bin_dir = PathBuf::from("libs/ffmpeg-master-latest-win64-gpl/bin");
-            let ffmpeg_bin = ffmpeg_bin_dir.join("ffmpeg.exe");
-
-            fs::copy(ffmpeg_bin, &execs_dir.join("ffmpeg.exe"))?;
-            let _ = fs::remove_file(PathBuf::from("libs/ffmpeg.zip"));
-            let _ = fs::remove_dir_all(PathBuf::from("libs/ffmpeg-master-latest-win64-gpl"));
-        } else {
-            //let yt_dlp_path = exec_dir.join("yt-dlp");
-            //let mut yt_dlp_dest = File::create(&yt_dlp_path);
-
-            println!("Downloading libraries...");
-
-            std::fs::create_dir_all(&execs_dir)?;
-
-            let dlp = execs_dir.join("yt-dlp");
-            let mut exec = File::create(&dlp)?;
-
-            let response = reqwest::get(
-                "https://github.com/yt-dlp/yt-dlp/releases/download/2026.03.17/yt-dlp",
-            )
-            .await?;
-            let bytes = response.bytes().await?;
-            exec.write_all(&bytes)?;
-
-            #[cfg(unix)]
-            {
-                let mut perms = std::fs::metadata(&dlp)?.permissions();
-                perms.set_mode(0o755);
-                std::fs::set_permissions(&dlp, perms)?;
-            }
-
-            let ffmpeg = execs_dir.join("ffmpeg.tar.xz");
-            let mut exec = File::create(&ffmpeg)?;
-
-            let response =
-                    reqwest::get("https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz")
-                        .await?;
-            let bytes = response.bytes().await?;
-            exec.write_all(&bytes)?;
-
-            let ffmpeg_file = File::open(&ffmpeg)?;
-
-            let decompressor = XzDecoder::new(ffmpeg_file);
-            let mut archive = Archive::new(decompressor);
-            archive.unpack(&execs_dir)?;
-
-            let ffmpeg_bin_dir = PathBuf::from("libs/ffmpeg-master-latest-linux64-gpl/bin");
-            let ffmpeg_bin = ffmpeg_bin_dir.join("ffmpeg");
-
-            fs::copy(ffmpeg_bin, &execs_dir.join("ffmpeg"))?;
-            let _ = fs::remove_file(PathBuf::from("libs/ffmpeg.tar.xz"));
-            let _ = fs::remove_dir_all(PathBuf::from("libs/ffmpeg-master-latest-linux64-gpl"));
-
-            #[cfg(unix)]
-            {
-                let mut perms = std::fs::metadata(PathBuf::from("libs/ffmpeg"))?.permissions();
-                perms.set_mode(0o755);
-                std::fs::set_permissions(PathBuf::from("libs/ffmpeg"), perms)?;
-            }
-        }
+        download_libraries(execs_dir.clone()).await?;
     }
 
     if !PathBuf::from("./config.json").exists() {
@@ -137,6 +182,16 @@ pub async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
                 ]
             }"#,
         );
+    }
+
+    let cmd_args: Vec<String> = vec![];
+
+    let args: Vec<String> = env::args().collect();
+    let mut arg_num = 0;
+
+    for (i, arg) in args.iter().enumerate() {
+        let cmd = CmdArgs::from_arg(&arg);
+        cmd.run(args.clone(), i);
     }
 
     let dlp_bin = execs_dir.join("yt-dlp");
