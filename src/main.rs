@@ -179,39 +179,7 @@ async fn download_libraries(
     }
 }
 
-#[tokio::main]
-pub async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    let execs_dir = PathBuf::from("libs");
-
-    if !execs_dir.exists() {
-        download_libraries(execs_dir.clone()).await?;
-    }
-
-    if !PathBuf::from("./config.json").exists() {
-        File::create("./config.json").unwrap();
-        let _ = fs::write(
-            "./config.json",
-            r#"{
-                "download_dest": "./downloads",
-                "video_format": "mp4",
-                "audio_export": false,
-                "audio_format": "mp3",
-                "thumbnail_export": false,
-                "videos": [
-                    "https://www.youtube.com/watch?v=EwTZ2xpQwpA",
-                    "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-                ]
-            }"#,
-        );
-    }
-
-    let args: Vec<String> = env::args().collect();
-
-    for (i, arg) in args.iter().enumerate() {
-        let cmd = CmdArgs::from_arg(&arg);
-        cmd.run(args.clone(), i);
-    }
-
+async fn run_download(execs_dir: PathBuf) -> std::result::Result<(), Box<dyn std::error::Error>> {
     let dlp_bin = execs_dir.join("yt-dlp");
     let ffmpeg_bin = execs_dir.join("ffmpeg");
 
@@ -274,4 +242,45 @@ pub async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     }
 
     Ok(())
+}
+
+#[tokio::main]
+pub async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    let execs_dir = PathBuf::from("libs");
+
+    if !execs_dir.exists() {
+        download_libraries(execs_dir.clone()).await?;
+    }
+
+    if !PathBuf::from("./config.json").exists() {
+        File::create("./config.json").unwrap();
+        let _ = fs::write(
+            "./config.json",
+            r#"{
+                "download_dest": "./downloads",
+                "video_format": "mp4",
+                "audio_export": false,
+                "audio_format": "mp3",
+                "thumbnail_export": false,
+                "videos": [
+                    "https://www.youtube.com/watch?v=EwTZ2xpQwpA",
+                    "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                ]
+            }"#,
+        );
+    }
+
+    let args: Vec<String> = env::args().collect();
+
+    if args.len() > 1 {
+        for (i, arg) in args.iter().enumerate() {
+            let cmd = CmdArgs::from_arg(&arg);
+            cmd.run(args.clone(), i);
+        }
+    } else {
+        run_download(execs_dir).await?;
+    }
+    
+    Ok(())
+    
 }
