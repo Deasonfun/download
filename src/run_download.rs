@@ -9,8 +9,8 @@ pub async fn run_download(execs_dir: PathBuf) -> std::result::Result<(), Box<dyn
     let dlp_bin = execs_dir.join("yt-dlp");
     let ffmpeg_bin = execs_dir.join("ffmpeg");
 
-    let config_json = fs::read_to_string("config.json")?;
-    let config: Config = serde_json::from_str(&config_json)?;
+    let config_json = fs::read_to_string("config.json").map_err(|e| format!("Could not read config: {e}"))?;
+    let config: Config = serde_json::from_str(&config_json).map_err(|e| format!("Could not convert convert config to string: {e}"))?;
 
     let mut command_args = vec!["--no-part"];
 
@@ -31,7 +31,7 @@ pub async fn run_download(execs_dir: PathBuf) -> std::result::Result<(), Box<dyn
             command_args.push("--audio-format");
             command_args.push(audio_format.as_str());
             command_args.push("--ffmpeg-location");
-            command_args.push(ffmpeg_bin.to_str().unwrap());
+            command_args.push(ffmpeg_bin.to_str().ok_or("Could not find path to ffmpeg")?);
         }
         false => (),
     }
@@ -53,18 +53,21 @@ pub async fn run_download(execs_dir: PathBuf) -> std::result::Result<(), Box<dyn
         let output = Command::new(&dlp_bin)
             .args(&command_args)
             .arg(record.clone())
-            .output()
-            .expect("Youtube DLP Not Found. Please download the executable.");
+            .output()?;
         println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
-        let mut log_file = fs::OpenOptions::new()
+        if let Ok(mut log_file) = fs::OpenOptions::new()
             .append(true)
             .create(true)
-            .open("output.log")?;
-        log_file.write_all(format!("Processing URL: {}\n", record).as_bytes())?;
-        log_file.write_all(&output.stdout)?;
-        log_file.write_all(&output.stderr)?;
-        log_file.write_all(b"\n\n\n")?;
-        println!("{}", output.status);
+            .open("output.log") {
+            log_file.write_all(format!("Processing URL: {}\n", record).as_bytes())?;
+            log_file.write_all(&output.stdout)?;
+            log_file.write_all(&output.stderr)?;
+            log_file.write_all(b"\n\n\n")?;
+            println!("{}", output.status);
+        } else {
+            println!("Could not open log file.");
+        }
+        
     }
 
     Ok(())

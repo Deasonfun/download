@@ -18,7 +18,7 @@ pub async fn download_libraries(
 
         println!("Downloading libraries...");
 
-        std::fs::create_dir_all(&execs_dir)?;
+        std::fs::create_dir_all(&execs_dir).map_err(|e| format!("Could not create libraries directory: {e}"))?;
 
         let dlp = execs_dir.join("yt-dlp");
         let mut exec = File::create(&dlp)?;
@@ -26,7 +26,7 @@ pub async fn download_libraries(
         let response = reqwest::get(
             "https://github.com/yt-dlp/yt-dlp/releases/download/2026.03.17/yt-dlp.exe",
         )
-        .await?;
+        .await.map_err(|e| format!("There was an issue downloading dlp executable: {e}"))?;
         let bytes = response.bytes().await?;
         exec.write_all(&bytes)?;
 
@@ -35,7 +35,7 @@ pub async fn download_libraries(
 
         let response =
                     reqwest::get("https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip")
-                    .await?;
+                    .await.map_err(|e| format!("There was an issue downloading dlp executable: {e}"))?;
         let bytes = response.bytes().await?;
         exec.write_all(&bytes)?;
 
@@ -43,7 +43,7 @@ pub async fn download_libraries(
 
         let mut decompressor = ZipArchive::new(ffmpeg_file)?;
 
-        decompressor.extract(&execs_dir)?;
+        decompressor.extract(&execs_dir).map_err(|e| format!("Could not extract ffmpeg zip: {e}"))?;
 
         let ffmpeg_bin_dir = PathBuf::from("libs/ffmpeg-master-latest-win64-gpl/bin");
         let ffmpeg_bin = ffmpeg_bin_dir.join("ffmpeg.exe");
@@ -58,14 +58,14 @@ pub async fn download_libraries(
 
         println!("Downloading libraries...");
 
-        std::fs::create_dir_all(&execs_dir)?;
+        std::fs::create_dir_all(&execs_dir).map_err(|e| format!("Could not create libraries directory: {e}"))?;
 
         let dlp = execs_dir.join("yt-dlp");
         let mut exec = File::create(&dlp)?;
 
         let response =
             reqwest::get("https://github.com/yt-dlp/yt-dlp/releases/download/2026.03.17/yt-dlp")
-                .await?;
+                .await.map_err(|e| format!("There was an issue downloading dlp executable: {e}"))?;
         let bytes = response.bytes().await?;
         exec.write_all(&bytes)?;
 
@@ -73,15 +73,15 @@ pub async fn download_libraries(
         {
             let mut perms = std::fs::metadata(&dlp)?.permissions();
             perms.set_mode(0o755);
-            std::fs::set_permissions(&dlp, perms)?;
+            std::fs::set_permissions(&dlp, perms).map_err(|e| format!("Could not set permission on dlp: {e}"))?;
         }
 
         let ffmpeg = execs_dir.join("ffmpeg.tar.xz");
         let mut exec = File::create(&ffmpeg)?;
 
         let response =
-                        reqwest::get("https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz")
-                            .await?;
+            reqwest::get("https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz")
+                .await.map_err(|e| format!("There was an issue downloading ffmpeg executable: {e}"))?;
         let bytes = response.bytes().await?;
         exec.write_all(&bytes)?;
 
@@ -89,7 +89,7 @@ pub async fn download_libraries(
 
         let decompressor = XzDecoder::new(ffmpeg_file);
         let mut archive = Archive::new(decompressor);
-        archive.unpack(&execs_dir)?;
+        archive.unpack(&execs_dir).map_err(|e| format!("Could not extract ffmpeg archive: {e}"))?;
 
         let ffmpeg_bin_dir = PathBuf::from("libs/ffmpeg-master-latest-linux64-gpl/bin");
         let ffmpeg_bin = ffmpeg_bin_dir.join("ffmpeg");
@@ -102,7 +102,7 @@ pub async fn download_libraries(
         {
             let mut perms = std::fs::metadata(PathBuf::from("libs/ffmpeg"))?.permissions();
             perms.set_mode(0o755);
-            std::fs::set_permissions(PathBuf::from("libs/ffmpeg"), perms)?;
+            std::fs::set_permissions(PathBuf::from("libs/ffmpeg"), perms).map_err(|e| format!("Could not set permission on ffmpeg: {e}"))?;
         }
         Ok(())
     }

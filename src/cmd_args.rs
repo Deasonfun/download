@@ -23,7 +23,7 @@ impl CmdArgs {
             CmdArgs::Add => {
                 if let Some(url) = args.get(arg_num + 1) {
                     let config_json = fs::read_to_string("config.json").map_err(|e| format!("Could not open config: {e}"))?;
-                    let mut config: Config = serde_json::from_str(&config_json).map_err(|e| format!("Could not read config: {e}"))?;
+                    let mut config: Config = serde_json::from_str(&config_json)?;
                     config.videos.push(url.clone());
 
                     let _ = fs::write(
@@ -40,7 +40,7 @@ impl CmdArgs {
                 if let Some(url) = args.get(arg_num + 1) {
 
                     let config_json = fs::read_to_string("config.json").map_err(|e| format!("Could not open config: {e}"))?;
-                    let mut config: Config = serde_json::from_str(&config_json).map_err(|e| format!("Could not read config: {e}"))?;
+                    let mut config: Config = serde_json::from_str(&config_json)?;
                     let r_url_index = config.videos.binary_search(url).map_err(|_| format!("Cannot find URL specified: {url}"))?;
 
                     config.videos.remove(r_url_index);
@@ -58,7 +58,7 @@ impl CmdArgs {
             CmdArgs::ExportAudio => {
                 if let Some(audio_format) = args.get(arg_num + 1) {
                     let config_json = fs::read_to_string("config.json").map_err(|e| format!("Could not open config: {e}"))?;
-                    let mut config: Config = serde_json::from_str(&config_json).map_err(|e| format!("Could not read config: {e}"))?;
+                    let mut config: Config = serde_json::from_str(&config_json)?;
                     config.audio_export = true;
                     config.audio_format = audio_format.clone();
                     let _ = fs::write(
