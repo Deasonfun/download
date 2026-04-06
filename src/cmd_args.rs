@@ -56,19 +56,14 @@ impl CmdArgs {
                 Ok(())
             }
             CmdArgs::ExportAudio => {
-                if let Some(audio_format) = args.get(arg_num + 1) {
-                    let config_json = fs::read_to_string("config.json").map_err(|e| format!("Could not open config: {e}"))?;
-                    let mut config: Config = serde_json::from_str(&config_json)?;
-                    config.audio_export = true;
-                    config.audio_format = audio_format.clone();
-                    let _ = fs::write(
-                        "config.json",
-                        serde_json::to_string_pretty(&config).map_err(|e| format!("Could not write new config: {e}"))?
-                    )
-                    .map_err(|e| format!("Could not write new config: {e}"))?;
-                } else {
-                    println!("No audio format given.");
-                }
+                let config_json = fs::read_to_string("config.json").map_err(|e| format!("Could not open config: {e}"))?;
+                let mut config: Config = serde_json::from_str(&config_json)?;
+                config.audio_export = !config.audio_export;
+                let _ = fs::write(
+                    "config.json",
+                    serde_json::to_string_pretty(&config).map_err(|e| format!("Could not write new config: {e}"))?
+                )
+                .map_err(|e| format!("Could not write new config: {e}"))?;
                 Ok(())
             }
             CmdArgs::None => Ok(())
