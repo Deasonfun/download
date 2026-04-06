@@ -18,7 +18,7 @@ pub async fn run_download(execs_dir: PathBuf) -> std::result::Result<(), Box<dyn
     command_args.push(&config.download_dest);
     println!("Download dest: {}", config.download_dest);
 
-    command_args.push("-f");
+    command_args.push("-t");
     command_args.push(config.video_format.as_str());
     println!("Video format: {}", config.video_format);
 
@@ -55,6 +55,7 @@ pub async fn run_download(execs_dir: PathBuf) -> std::result::Result<(), Box<dyn
             .arg(record.clone())
             .output()?;
         println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
+        println!("stderr: {}", String::from_utf8_lossy(&output.stderr));
         if let Ok(mut log_file) = fs::OpenOptions::new()
             .append(true)
             .create(true)

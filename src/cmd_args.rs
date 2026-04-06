@@ -1,11 +1,12 @@
 use crate::config::{Config};
 
-use std::fs::{self};
+use std::{fmt::format, fs::{self}};
 
 pub enum CmdArgs {
     Add,
     Remove,
     ExportAudio,
+    VideoFormat,
     None,
 }
 
@@ -15,6 +16,7 @@ impl CmdArgs {
             "-a" => CmdArgs::Add,
             "-r" => CmdArgs::Remove,
             "-A" => CmdArgs::ExportAudio,
+            "-f" => CmdArgs::VideoFormat,
             _ => CmdArgs::None,
         }
     }
@@ -64,6 +66,22 @@ impl CmdArgs {
                     serde_json::to_string_pretty(&config).map_err(|e| format!("Could not write new config: {e}"))?
                 )
                 .map_err(|e| format!("Could not write new config: {e}"))?;
+                Ok(())
+            },
+            CmdArgs::VideoFormat => {
+                if let Some(format) = args.get(arg_num + 1) {
+                    let config_json = fs::read_to_string("config.json").map_err(|e| format!("Could not open config: {e}"))?;
+                    let mut config: Config = serde_json::from_str(&config_json)?;
+                    config.video_format = format.clone();
+
+                    let _ = fs::write(
+                        "config.json",
+                        serde_json::to_string_pretty(&config).map_err(|e| format!("Could not read new config: {e}"))?
+                    )
+                    .map_err(|e| format!("Could not write new config: {e}"))?;
+                } else {
+                    println!("No format input with -f");
+                }
                 Ok(())
             }
             CmdArgs::None => Ok(())
