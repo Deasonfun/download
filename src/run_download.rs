@@ -12,6 +12,8 @@ pub async fn run_download(execs_dir: PathBuf) -> std::result::Result<(), Box<dyn
     let config_json = fs::read_to_string("config.json").map_err(|e| format!("Could not read config: {e}"))?;
     let config: Config = serde_json::from_str(&config_json).map_err(|e| format!("Could not convert convert config to string: {e}"))?;
 
+    let cert_path = execs_dir.join("certs").join("cacert.pem");
+
     let mut command_args = vec!["--no-part"];
 
     command_args.push("-P");
@@ -51,6 +53,8 @@ pub async fn run_download(execs_dir: PathBuf) -> std::result::Result<(), Box<dyn
         println!("{}", record);
 
         let output = Command::new(&dlp_bin)
+            .env("SSL_CERT_FILE", &cert_path)
+            .env("REQUESTS_CA_BUNDLE", &cert_path)
             .args(&command_args)
             .arg(record.clone())
             .output()?;

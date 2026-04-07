@@ -13,6 +13,13 @@ use std::os::unix::fs::PermissionsExt;
 pub async fn download_libraries(
     execs_dir: PathBuf,
 ) -> std::result::Result<(), Box<dyn std::error::Error>> {
+
+    let dlp_url = match consts::OS {
+        "windows" => "https://github.com/yt-dlp/yt-dlp/releases/download/2026.03.17/yt-dlp.exe",
+        "macos" => "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_macos",
+        "linux" => "https://github.com/yt-dlp/yt-dlp/releases/download/2026.03.17/yt-dlp_linux",
+        _ => panic!("Your OS is not supported by yt-dlp")
+    };
     if consts::OS == "windows" {
         println!("windows");
 
@@ -23,10 +30,8 @@ pub async fn download_libraries(
         let dlp = execs_dir.join("yt-dlp");
         let mut exec = File::create(&dlp)?;
 
-        let response = reqwest::get(
-            "https://github.com/yt-dlp/yt-dlp/releases/download/2026.03.17/yt-dlp.exe",
-        )
-        .await.map_err(|e| format!("There was an issue downloading dlp executable: {e}"))?;
+        let response = reqwest::get(dlp_url)
+            .await.map_err(|e| format!("There was an issue downloading dlp executable: {e}"))?;
         let bytes = response.bytes().await?;
         exec.write_all(&bytes)?;
 
@@ -64,7 +69,7 @@ pub async fn download_libraries(
         let mut exec = File::create(&dlp)?;
 
         let response =
-            reqwest::get("https://github.com/yt-dlp/yt-dlp/releases/download/2026.03.17/yt-dlp")
+            reqwest::get(dlp_url)
                 .await.map_err(|e| format!("There was an issue downloading dlp executable: {e}"))?;
         let bytes = response.bytes().await?;
         exec.write_all(&bytes)?;

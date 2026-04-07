@@ -1,6 +1,6 @@
 use crate::config::{Config};
 
-use std::{fmt::format, fs::{self}};
+use std::{fs::{self}};
 
 pub enum CmdArgs {
     Add,
