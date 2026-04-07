@@ -21,8 +21,6 @@ pub async fn download_libraries(
         _ => panic!("Your OS is not supported by yt-dlp")
     };
     if consts::OS == "windows" {
-        println!("windows");
-
         println!("Downloading libraries...");
 
         std::fs::create_dir_all(&execs_dir).map_err(|e| format!("Could not create libraries directory: {e}"))?;
@@ -38,9 +36,8 @@ pub async fn download_libraries(
         let ffmpeg = execs_dir.join("ffmpeg.zip");
         let mut exec = File::create(&ffmpeg)?;
 
-        let response =
-                    reqwest::get("https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip")
-                    .await.map_err(|e| format!("There was an issue downloading dlp executable: {e}"))?;
+        let response = reqwest::get("https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip")
+            .await.map_err(|e| format!("There was an issue downloading dlp executable: {e}"))?;
         let bytes = response.bytes().await?;
         exec.write_all(&bytes)?;
 
@@ -52,15 +49,14 @@ pub async fn download_libraries(
 
         let ffmpeg_bin_dir = PathBuf::from("libs/ffmpeg-master-latest-win64-gpl/bin");
         let ffmpeg_bin = ffmpeg_bin_dir.join("ffmpeg.exe");
+        let ffprobe_bin = ffmpeg_bin_dir.join("ffprobe.exe");
 
         fs::copy(ffmpeg_bin, &execs_dir.join("ffmpeg.exe"))?;
+        fs::copy(ffprobe_bin, &execs_dir.join("ffprobe.exe"))?;
         let _ = fs::remove_file(PathBuf::from("libs/ffmpeg.zip"));
         let _ = fs::remove_dir_all(PathBuf::from("libs/ffmpeg-master-latest-win64-gpl"));
         Ok(())
     } else {
-        //let yt_dlp_path = exec_dir.join("yt-dlp");
-        //let mut yt_dlp_dest = File::create(&yt_dlp_path);
-
         println!("Downloading libraries...");
 
         std::fs::create_dir_all(&execs_dir).map_err(|e| format!("Could not create libraries directory: {e}"))?;
@@ -98,8 +94,10 @@ pub async fn download_libraries(
 
         let ffmpeg_bin_dir = PathBuf::from("libs/ffmpeg-master-latest-linux64-gpl/bin");
         let ffmpeg_bin = ffmpeg_bin_dir.join("ffmpeg");
+        let ffprobe_bin = ffmpeg_bin_dir.join("ffprobe");
 
         fs::copy(ffmpeg_bin, &execs_dir.join("ffmpeg"))?;
+        fs::copy(ffprobe_bin, &execs_dir.join("ffprobe"))?;
         let _ = fs::remove_file(PathBuf::from("libs/ffmpeg.tar.xz"));
         let _ = fs::remove_dir_all(PathBuf::from("libs/ffmpeg-master-latest-linux64-gpl"));
 

@@ -7,14 +7,13 @@ use std::fs::{self};
 
 pub async fn run_download(execs_dir: PathBuf) -> std::result::Result<(), Box<dyn std::error::Error>> {
     let dlp_bin = execs_dir.join("yt-dlp");
-    let ffmpeg_bin = execs_dir.join("ffmpeg");
 
     let config_json = fs::read_to_string("config.json").map_err(|e| format!("Could not read config: {e}"))?;
     let config: Config = serde_json::from_str(&config_json).map_err(|e| format!("Could not convert convert config to string: {e}"))?;
 
     let cert_path = execs_dir.join("certs").join("cacert.pem");
 
-    let mut command_args = vec!["--no-part"];
+    let mut command_args = vec!["--no-part", "--force-overwrites"];
 
     command_args.push("-P");
     command_args.push(&config.download_dest);
@@ -33,7 +32,7 @@ pub async fn run_download(execs_dir: PathBuf) -> std::result::Result<(), Box<dyn
             command_args.push("--audio-format");
             command_args.push(audio_format.as_str());
             command_args.push("--ffmpeg-location");
-            command_args.push(ffmpeg_bin.to_str().ok_or("Could not find path to ffmpeg")?);
+            command_args.push(execs_dir.to_str().ok_or("Could not find path to ffmpeg")?);
         }
         false => (),
     }
