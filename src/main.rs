@@ -3,7 +3,7 @@ mod config;
 mod download_libraries;
 mod run_download;
 
-use crate::cmd_args::{CmdArgs};
+use crate::cmd_args::CmdArgs;
 use crate::download_libraries::download_libraries;
 use crate::run_download::run_download;
 
@@ -42,12 +42,15 @@ pub async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     if args.len() > 1 {
         for (i, arg) in args.iter().enumerate() {
             let cmd = CmdArgs::from_arg(&arg);
-            let _ = cmd.run(args.clone(), i).map_err(|e| format!("Could not run with command arguments: {e}"))?;
+            let _ = cmd
+                .run(args.clone(), i)
+                .map_err(|e| format!("Could not run with command arguments: {e}"))?;
         }
     } else {
-        run_download(execs_dir).await.map_err(|e| format!("Could not run: {e}"))?;
+        run_download(execs_dir)
+            .await
+            .map_err(|e| format!("Could not run: {e}"))?;
     }
-    
+
     Ok(())
-    
 }

@@ -1,15 +1,19 @@
 use crate::config::Config;
 
+use std::fs::{self};
 use std::io::Write;
 use std::path::PathBuf;
 use std::process::Command;
-use std::fs::{self};
 
-pub async fn run_download(execs_dir: PathBuf) -> std::result::Result<(), Box<dyn std::error::Error>> {
+pub async fn run_download(
+    execs_dir: PathBuf,
+) -> std::result::Result<(), Box<dyn std::error::Error>> {
     let dlp_bin = execs_dir.join("yt-dlp");
 
-    let config_json = fs::read_to_string("config.json").map_err(|e| format!("Could not read config: {e}"))?;
-    let config: Config = serde_json::from_str(&config_json).map_err(|e| format!("Could not convert convert config to string: {e}"))?;
+    let config_json =
+        fs::read_to_string("config.json").map_err(|e| format!("Could not read config: {e}"))?;
+    let config: Config = serde_json::from_str(&config_json)
+        .map_err(|e| format!("Could not convert convert config to string: {e}"))?;
 
     let cert_path = execs_dir.join("certs").join("cacert.pem");
 
@@ -19,7 +23,7 @@ pub async fn run_download(execs_dir: PathBuf) -> std::result::Result<(), Box<dyn
     command_args.push(&config.download_dest);
     println!("Download dest: {}", config.download_dest);
 
-    command_args.push("-t");
+    command_args.push("-f");
     command_args.push(config.video_format.as_str());
     println!("Video format: {}", config.video_format);
 
@@ -62,7 +66,8 @@ pub async fn run_download(execs_dir: PathBuf) -> std::result::Result<(), Box<dyn
         if let Ok(mut log_file) = fs::OpenOptions::new()
             .append(true)
             .create(true)
-            .open("output.log") {
+            .open("output.log")
+        {
             log_file.write_all(format!("Processing URL: {}\n", record).as_bytes())?;
             log_file.write_all(&output.stdout)?;
             log_file.write_all(&output.stderr)?;
@@ -71,7 +76,6 @@ pub async fn run_download(execs_dir: PathBuf) -> std::result::Result<(), Box<dyn
         } else {
             println!("Could not open log file.");
         }
-        
     }
 
     Ok(())
