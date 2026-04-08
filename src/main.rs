@@ -44,6 +44,7 @@ pub async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
             let cmd = CmdArgs::from_arg(&arg);
             let _ = cmd
                 .run(args.clone(), i)
+                .await
                 .map_err(|e| format!("Could not run with command arguments: {e}"))?;
         }
     } else {

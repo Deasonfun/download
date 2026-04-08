@@ -1,6 +1,9 @@
-use crate::config::Config;
+use crate::{config::Config, run_download::run_download};
 
-use std::fs::{self};
+use std::{
+    fs::{self},
+    path::PathBuf,
+};
 
 const VIDEO_FORMATS: [&str; 6] = ["avi", "flv", "mkv", "mov", "mp4", "webm"];
 const AUDIO_FORMATS: [&str; 8] = ["aac", "alac", "flac", "m4a", "mp3", "opus", "vorbis", "wav"];
@@ -12,6 +15,7 @@ pub enum CmdArgs {
     VideoFormat,
     AudioFormat,
     DownloadDest,
+    Execute,
     None,
 }
 
@@ -24,11 +28,16 @@ impl CmdArgs {
             "-f" => CmdArgs::VideoFormat,
             "-F" => CmdArgs::AudioFormat,
             "-d" => CmdArgs::DownloadDest,
+            "-e" => CmdArgs::Execute,
             _ => CmdArgs::None,
         }
     }
 
-    pub fn run(&self, args: Vec<String>, arg_num: usize) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn run(
+        &self,
+        args: Vec<String>,
+        arg_num: usize,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         fn read_config() -> Result<Config, Box<dyn std::error::Error>> {
             let config_json = fs::read_to_string("config.json")
                 .map_err(|e| format!("Could not open config: {e}"))?;
@@ -128,6 +137,10 @@ impl CmdArgs {
                 } else {
                     println!("No download destination input with -d");
                 }
+                Ok(())
+            }
+            CmdArgs::Execute => {
+                run_download(PathBuf::from("libs")).await?;
                 Ok(())
             }
             CmdArgs::None => Ok(()),
