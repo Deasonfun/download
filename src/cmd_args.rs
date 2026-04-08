@@ -102,7 +102,7 @@ impl CmdArgs {
 
                     write_config(config)?;
                 } else {
-                    println!("No format input with -f");
+                    panic!("No format input with -f");
                 }
                 Ok(())
             }
@@ -120,7 +120,7 @@ impl CmdArgs {
 
                     write_config(config)?;
                 } else {
-                    println!("No format input with -F");
+                    panic!("No format input with -F");
                 }
                 Ok(())
             }
@@ -135,7 +135,7 @@ impl CmdArgs {
 
                     write_config(config)?;
                 } else {
-                    println!("No download destination input with -d");
+                    panic!("No download destination input with -d");
                 }
                 Ok(())
             }
