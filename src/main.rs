@@ -1,11 +1,6 @@
-mod cmd_args;
-mod config;
-mod download_libraries;
-mod run_download;
-
-use crate::cmd_args::CmdArgs;
-use crate::download_libraries::download_libraries;
-use crate::run_download::run_download;
+use download::cmd_args::CmdArgs;
+use download::download_libraries::download_libraries;
+use download::run_download::run_download;
 
 use std::env;
 use std::fs::{self, File};

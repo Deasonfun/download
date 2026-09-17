@@ -1,0 +1,72 @@
+<div class="grid grid-2 fade-in">
+  <section class="panel">
+    <div class="panel-header panel-header-purple">
+      <span>QUEUE</span>
+     </span> <span class="panel-header-sub">urls to download</span>
+    </div>
+    <div class="panel-body">
+      <form class="add-row" data-reset
+            hx-post="/api/queue" hx-target="#queue-wrap" hx-swap="innerHTML">
+        <input class="input" type="url" name="url" required
+               placeholder="https://www.youtube.com/watch?v=…" />
+        <button class="btn btn-red" type="submit">＋ Add</button>
+      </form>
+
+      <div id="queue-wrap"
+           hx-get="/api/queue" hx-trigger="load, every 1s" hx-swap="innerHTML">
+        <div class="queue-empty">Loading queue…</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-header panel-header-teal">
+      <span>DESTINATION</span>
+      <span class="panel-header-sub">where files land</span>
+    </div>
+    <div class="panel-body">
+      <form hx-post="/api/settings/dest" hx-target="#dest-note" hx-swap="innerHTML">
+        <label class="field-label" for="dest">Download folder</label>
+        <div class="field-row">
+          <input id="dest" class="input" type="text" name="download_dest"
+                 value="{{DEST_VALUE}}" />
+          <button class="btn btn-teal" type="submit">Save</button>
+        </div>
+        <p id="dest-note" class="field-note"></p>
+      </form>
+
+      <div class="callout callout-yellow">
+        <span class="callout-icon">💾</span>
+        <p>Files are written straight into this folder</p> — video, audio, and
+           thumbnails all follow your Settings.</p>
+      </div>
+
+      <div class="chip-row">
+        <span class="chip chip-red">mp4</span>
+        <span class="chip chip-purple">mp3</span>
+        <span class="chip chip-teal">jpg</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel span-2">
+    <div class="panel-header panel-header-yellow">
+      <span>DOWNLOAD</span>
+      <span class="panel-header-sub">run the queue</span>
+    </div>
+    <div class="panel-body">
+      <div class="runner-controls">
+        <span id="status-pill"
+              hx-get="/api/status" hx-trigger="load, every 1s" hx-swap="innerHTML">
+          <span class="status-pill"><span class="dot"></span>…</span>
+        </span>
+        <button class="btn btn-red btn-lg" hx-post="/api/run" hx-swap="none">⬇ Download</button>
+        <button class="btn" hx-post="/api/stop" hx-swap="none">■ Stop</button>
+        <button class="btn btn-purple"
+                onclick="document.getElementById('tab-logs').click()">View logs →</button>
+      </div>
+      <p class="field-note">Runs <code>download -e</code> on everything in the queue —
+        live output streams on the Logs page.</p>
+    </div>
+  </section>
+</div>

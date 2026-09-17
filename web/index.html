@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>download — video downloader</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⬇️</text></svg>" />
+  <script>
+    // apply saved theme before first paint to avoid a flash
+    try {
+      var t = localStorage.getItem('download-theme') || 'light';
+      document.documentElement.setAttribute('data-theme', t);
+    } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="/style.css" />
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/sse.js"></script>
+</head>
+<body>
+  <div class="grid-bg"></div>
+
+  <div class="app">
+    <header class="header">
+      <div class="logo">
+        <div class="logo-badge">⬇</div>
+        <div>
+          <h1 class="logo-title">download</h1>
+          <p class="logo-sub">yt-dlp powered downloader</p>
+        </div>
+      </div>
+
+      <nav class="tabs">
+        <button id="tab-library" class="tab active" data-nav hx-get="/pages/library" hx-target="#page" hx-swap="innerHTML">
+          <span class="tab-dot tab-dot-red"></span>Library
+        </button>
+        <button id="tab-settings" class="tab" data-nav hx-get="/pages/settings" hx-target="#page" hx-swap="innerHTML">
+          <span class="tab-dot tab-dot-purple"></span>Settings
+        </button>
+        <button id="tab-logs" class="tab" data-nav hx-get="/pages/logs" hx-target="#page" hx-swap="innerHTML">
+          <span class="tab-dot tab-dot-teal"></span>Logs
+        </button>
+        <button id="tab-help" class="tab" data-nav hx-get="/pages/help" hx-target="#page" hx-swap="innerHTML">
+          <span class="tab-dot tab-dot-orange"></span>Help
+        </button>
+        <button id="theme-toggle" class="theme-toggle" type="button"
+                aria-label="Toggle dark mode" title="Toggle dark mode">☾</button>
+      </nav>
+    </header>
+
+    <main id="page" class="container"
+          hx-get="/pages/library" hx-trigger="load" hx-swap="innerHTML"></main>
+
+    <footer class="statusbar">
+      <span id="save-note" class="save-note"></span>
+      <span class="statusbar-item"><span class="dot dot-teal"></span>htmx</span>
+      <span class="statusbar-item"><span class="dot dot-yellow"></span>config.json</span>
+      <span class="statusbar-item"><span class="dot dot-purple"></span>yt-dlp</span>
+    </footer>
+  </div>
+
+  <script>
+    // HTMX drives all requests; this script only handles UI chrome that
+    // isn't a server concern: active tab state, form resets, save feedback,
+    // and keeping the log console scrolled to the bottom.
+    (function () {
+      var root = document.documentElement;
+      var btn = document.getElementById('theme-toggle');
+      function sync() {
+        if (btn) btn.textContent = root.getAttribute('data-theme') === 'dark' ? '☀' : '☾';
+      }
+      sync();
+      if (btn) {
+        btn.addEventListener('click', function () {
+          var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+          root.setAttribute('data-theme', next);
+          try { localStorage.setItem('download-theme', next); } catch (e) {}
+          sync();
+        });
+      }
+    })();
+
+    document.body.addEventListener('htmx:afterRequest', function (evt) {
+      var elt = evt.detail.elt;
+
+      if (elt.hasAttribute('data-nav')) {
+        document.querySelectorAll('[data-nav]').forEach(function (b) {
+          b.classList.toggle('active', b === elt);
+        });
+      }
+
+      if (elt.hasAttribute('data-reset') && evt.detail.successful) {
+        elt.reset();
+      }
+
+      if (elt.hasAttribute('data-setting') && evt.detail.successful) {
+        var note = document.getElementById('save-note');
+        note.textContent = '✓ saved to config.json';
+        note.classList.add('show');
+        clearTimeout(window.__saveTimer);
+        window.__saveTimer = setTimeout(function () {
+          note.classList.remove('show');
+        }, 1500);
+      }
+    });
+
+    document.body.addEventListener('htmx:afterSwap', function (evt) {
+      if (evt.detail.target.id === 'console') {
+        evt.detail.target.scrollTop = evt.detail.target.scrollHeight;
+      }
+    });
+  </script>
+</body>
+</html>

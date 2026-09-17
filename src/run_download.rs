@@ -1,9 +1,11 @@
 use crate::config::Config;
 
 use std::fs::{self};
-use std::io::Write;
+use std::io::{self, Write};
 use std::path::PathBuf;
-use std::process::Command;
+use std::process::{Command, Stdio};
+use std::sync::{Arc, Mutex};
+use std::thread;
 
 pub async fn run_download(
     execs_dir: PathBuf,
@@ -68,32 +70,54 @@ pub async fn run_download(
     }
 
     fs::write("output.log", "")?;
+    let log_file = Arc::new(Mutex::new(
+        fs::OpenOptions::new()
+            .create(true)
+            .write(true)
+            .truncate(true)
+            .open("output.log")?,
+    ));
     for result in config.videos {
         let record = result;
 
         println!("{}", record);
 
-        let output = Command::new(&dlp_bin)
+        {
+            let mut file = log_file.lock().unwrap();
+            file.write_all(format!("Processing URL: {}\n", record).as_bytes())?;
+        }
+
+        let mut child = Command::new(&dlp_bin)
             .env("SSL_CERT_FILE", &cert_path)
             .env("REQUESTS_CA_BUNDLE", &cert_path)
             .args(&command_args)
             .arg(record.clone())
-            .output()?;
-        println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
-        println!("stderr: {}", String::from_utf8_lossy(&output.stderr));
-        if let Ok(mut log_file) = fs::OpenOptions::new()
-            .append(true)
-            .create(true)
-            .open("output.log")
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()?;
+
+        let mut stdout = child.stdout.take().expect("stdout");
+        let mut stderr = child.stderr.take().expect("stderr");
+
+        let log_file_stdout = Arc::clone(&log_file);
+        let stdout_handle = thread::spawn(move || {
+            let _ = io::copy(&mut stdout, &mut *log_file_stdout.lock().unwrap());
+        });
+
+        let log_file_stderr = Arc::clone(&log_file);
+        let stderr_handle = thread::spawn(move || {
+            let _ = io::copy(&mut stderr, &mut *log_file_stderr.lock().unwrap());
+        });
+
+        let status = child.wait()?;
+        stdout_handle.join().ok();
+        stderr_handle.join().ok();
+
         {
-            log_file.write_all(format!("Processing URL: {}\n", record).as_bytes())?;
-            log_file.write_all(&output.stdout)?;
-            log_file.write_all(&output.stderr)?;
-            log_file.write_all(b"\n\n\n")?;
-            println!("{}", output.status);
-        } else {
-            println!("Could not open log file.");
+            let mut file = log_file.lock().unwrap();
+            file.write_all(b"\n\n\n")?;
         }
+        println!("{}", status);
     }
 
     Ok(())

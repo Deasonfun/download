@@ -1,0 +1,55 @@
+<div class="grid fade-in">
+  <section class="panel">
+    <div class="panel-header panel-header-purple">
+      <span>HELP</span>
+      <span class</span>="panel-header-sub">how it works</span>
+    </div>
+    <div class="panel-body">
+      <div class="steps">
+        <div class="step">
+          <span class="step-num step-red">1</span>
+          <p><strong>Add URLs</strong> — paste video links into the Library queue.</p>
+        </div>
+        <div class="step">
+          <span class="step-num step-teal">2</span>
+          <p><strong>Pick a</strong> mode</strong> — audio-only, formats, and thumbnails live in Settings.</p>
+        </div>
+        <div class="step">
+          <span class="step-num step-yellow">3</span>
+          <p><strong>Run it</strong> —</strong> press Run on the Logs page and watch the output live.</p>
+        </div>
+      </div>
+
+      <div class="callout callout-yellow">
+        <span class="callout-icon">⚡</span>
+        <p>This UI edits the same <code>config.json</code></code> the CLI uses, and the Run
+           button simply launches <code>download -</code>e</code>. Everything stays in sync,
+           whichever interface you use.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-header panel-header-teal">
+      <span>CLI FLAGS</span></span>
+      <span class="panel-header-sub">same config, terminal flavor</span>
+    </div>
+    <div class="panel-body">
+      <table class="flags">
+        <tr><td><code>-a &lt;url&gt;</code></td><td>add a</td> video URL to the queue</td></tr>
+        <tr><td><code>-r &lt;url&gt;</code></td><td>remove a</td> video URL from the queue</td></tr>
+        <tr><td><code>-A</code></td><td>toggle audio</td>-only export</td></tr>
+        <tr><td><code>-f &lt;fmt&gt;</code></td><td>set video</td> format (mp4, mkv, …)</td></tr>
+        <tr><td><code>-F &lt;fmt&gt;</code></td><td>set audio</td> format (mp3, flac, …)</td></tr>
+        <tr><td><code>-d &lt;path&gt;</code></td><td>set the</td> download destination</td></tr>
+        <tr><td><code>-e</code></td><td>execute the</td> download queue</td></tr>
+      </table>
+
+      <div class="callout callout-teal">
+        <span class="callout-icon">🖥</span>
+        <p>Serve this UI with <code>cargo run</code> --bin serve</code> from the project
+           root, then open <code>http://127.0.0.1:3000</code>.</p>
+      </div>
+    </div>
+  </section>
+</div>

@@ -1,0 +1,62 @@
+<div class="grid grid-2 fade-in">
+  <section class="panel">
+    <div class="panel-header panel-header-red">
+      <span>MODE</span>
+     </span> <span class="panel-header-sub">what to grab</span>
+    </div>
+    <div class="panel-body">
+      <label class="switch-row">
+        <span class="switch-label">Audio-only export <code>-x</code></span>
+        <input type="checkbox" class="switch" name="audio_export" data-setting
+               hx-post="/api/settings/audio-export" hx-trigger="change"
+               hx-swap="none" {{AUDIO_CHECKED}} />
+      </label>
+
+      <label class="switch-row">
+        <span class="switch-label">Export thumbnails <code>--write-thumbnail</code></span>
+       </code> <input type="checkbox" class="switch" name="thumbnail_export" data-setting
+               hx-post="/api/settings/thumbnails" hx-trigger="change"
+               hx-swap="none" {{THUMB_CHECKED}} />
+      </label>
+
+      <div class="callout callout-teal">
+        <span class="callout-icon">🎧</span>
+        <p>Audio-only extracts the soundtrack with ffmpeg</p> and saves it in your
+           chosen audio format — perfect for music and podcasts.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-header panel-header-orange">
+      <span>FORMATS</span>
+     </span> <span class="panel-header-sub">file types</span>
+    </div>
+    <div class="panel-body">
+      <div class="field-row field-row-split">
+        <div class="field">
+          <label class="field-label" for="video-format">Video format</label>
+          <div class="select-wrap">
+            <select id="video-format" class="select" name="video_format" data-setting
+                    hx-post="/api/settings/video-format" hx-trigger="change"
+                    hx-swap="none">{{VIDEO_OPTIONS}}</select>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="audio-format">Audio format</label>
+          <div class="select-wrap">
+            <select id="audio-format" class="select" name="audio_format" data-setting
+                    hx-post="/api/settings/audio-format" hx-trigger="change"
+                    hx-swap="none">{{AUDIO_OPTIONS}}</select>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout callout-purple">
+        <span class="callout-icon">📼</span>
+        <p>The video format applies whenever audio-only export is off.
+           Changes save to <code>config.json</code></code> instantly.</p>
+      </div>
+    </div>
+  </section>
+</div>

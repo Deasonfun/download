@@ -1,12 +1,9 @@
-use crate::{config::Config, run_download::run_download};
-
-use std::{
-    fs::{self},
-    path::PathBuf,
+use crate::{
+    config::{Config, AUDIO_FORMATS, VIDEO_FORMATS},
+    run_download::run_download,
 };
 
-const VIDEO_FORMATS: [&str; 6] = ["avi", "flv", "mkv", "mov", "mp4", "webm"];
-const AUDIO_FORMATS: [&str; 8] = ["aac", "alac", "flac", "m4a", "mp3", "opus", "vorbis", "wav"];
+use std::{fs, path::PathBuf};
 
 pub enum CmdArgs {
     Add,
@@ -38,28 +35,13 @@ impl CmdArgs {
         args: Vec<String>,
         arg_num: usize,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        fn read_config() -> Result<Config, Box<dyn std::error::Error>> {
-            let config_json = fs::read_to_string("config.json")
-                .map_err(|e| format!("Could not open config: {e}"))?;
-            let config: Config = serde_json::from_str(&config_json)?;
-            Ok(config)
-        }
-        fn write_config(config: Config) -> Result<(), Box<dyn std::error::Error>> {
-            let _ = fs::write(
-                "config.json",
-                serde_json::to_string_pretty(&config)
-                    .map_err(|e| format!("Could not read new config: {e}"))?,
-            )
-            .map_err(|e| format!("Could not write new config: {e}"))?;
-            Ok(())
-        }
         match self {
             CmdArgs::Add => {
                 if let Some(url) = args.get(arg_num + 1) {
-                    let mut config = read_config()?;
+                    let mut config = Config::load()?;
                     config.videos.push(url.clone());
 
-                    write_config(config)?;
+                    config.save()?;
                 } else {
                     println!("No URL input with -a");
                 }
@@ -67,7 +49,7 @@ impl CmdArgs {
             }
             CmdArgs::Remove => {
                 if let Some(url) = args.get(arg_num + 1) {
-                    let mut config = read_config()?;
+                    let mut config = Config::load()?;
                     let r_url_index = config
                         .videos
                         .binary_search(url)
@@ -75,22 +57,22 @@ impl CmdArgs {
 
                     config.videos.remove(r_url_index);
 
-                    write_config(config)?;
+                    config.save()?;
                 } else {
                     println!("No URL input with -a");
                 }
                 Ok(())
             }
             CmdArgs::ExportAudio => {
-                let mut config = read_config()?;
+                let mut config = Config::load()?;
                 config.audio_export = !config.audio_export;
 
-                write_config(config)?;
+                config.save()?;
                 Ok(())
             }
             CmdArgs::VideoFormat => {
                 if let Some(format) = args.get(arg_num + 1) {
-                    let mut config = read_config()?;
+                    let mut config = Config::load()?;
                     if VIDEO_FORMATS.contains(&format.as_str()) {
                         config.video_format = format.clone();
                     } else {
@@ -100,7 +82,7 @@ impl CmdArgs {
                         );
                     }
 
-                    write_config(config)?;
+                    config.save()?;
                 } else {
                     panic!("No format input with -f");
                 }
@@ -108,7 +90,7 @@ impl CmdArgs {
             }
             CmdArgs::AudioFormat => {
                 if let Some(format) = args.get(arg_num + 1) {
-                    let mut config = read_config()?;
+                    let mut config = Config::load()?;
                     if AUDIO_FORMATS.contains(&format.as_str()) {
                         config.audio_format = format.clone();
                     } else {
@@ -118,7 +100,7 @@ impl CmdArgs {
                         );
                     }
 
-                    write_config(config)?;
+                    config.save()?;
                 } else {
                     panic!("No format input with -F");
                 }
@@ -126,14 +108,14 @@ impl CmdArgs {
             }
             CmdArgs::DownloadDest => {
                 if let Some(dest) = args.get(arg_num + 1) {
-                    let mut config = read_config()?;
+                    let mut config = Config::load()?;
                     if fs::exists(dest)? {
                         config.download_dest = dest.clone();
                     } else {
                         panic!("The file path {dest} does not exist.");
                     }
 
-                    write_config(config)?;
+                    config.save()?;
                 } else {
                     panic!("No download destination input with -d");
                 }

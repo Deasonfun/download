@@ -1,0 +1,29 @@
+<div class="grid fade-in">
+  <section class="panel">
+    <div class="panel-header panel-header-yellow">
+      <span>RUNNER</span>
+      <</span>span class="panel-header-sub">live output</span>
+    </div>
+    <div class="panel-body">
+      <div class="runner-controls">
+        <span id="status-pill"
+              hx-get="/api/status" hx-trigger="load, every 2s" hx-swap="innerHTML">
+          <span class="status-pill"><span class="dot"></span>…</span>
+        </span>
+        <button class="btn btn-red" hx-post="/api/run" hx-swap="none">▶ Run downloads</button>
+        <button class="btn" hx-post="/api/stop" hx-swap="none">■ Stop</button>
+        <button class="btn" hx-post="/api/logs/clear"
+                hx-target="#console" hx-swap="innerHTML">Clear</button>
+      </div>
+
+      <div id="console" class="console"
+           hx-ext="sse" sse-connect="/api/logs/stream" sse-swap="message"
+           hx-swap="beforeend">
+        <div>[console ready — run the downloader to see live output]</div>
+      </div>
+
+      <p class="field-note">Streams <code>output.log</code> as the runner</code> writes it —
+        the same file the CLI produces.</p>
+    </div>
+  </section>
+</div>
