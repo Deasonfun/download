@@ -50,14 +50,6 @@
     <main id="page" class="container"
           hx-get="/pages/library" hx-trigger="load" hx-swap="innerHTML"></main>
 
-    <footer class="statusbar">
-      <span id="save-note" class="save-note"></span>
-      <span class="statusbar-item"><span class="dot dot-teal"></span>htmx</span>
-      <span class="statusbar-item"><span class="dot dot-yellow"></span>config.json</span>
-      <span class="statusbar-item"><span class="dot dot-purple"></span>yt-dlp</span>
-    </footer>
-  </div>
-
   <script>
     // HTMX drives all requests; this script only handles UI chrome that
     // isn't a server concern: active tab state, form resets, save feedback,

@@ -490,16 +490,15 @@ body {
 }
 
 .queue-item {
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
   gap: 12px;
   padding: 10px 12px;
   background: var(--cream);
   border: 3px solid var(--ink);
   border-radius: 12px;
   box-shadow: var(--shadow-sm);
-  flex-direction: column;
-  align-items: stretch;
 }
 
 .queue-index {
@@ -515,7 +514,6 @@ body {
 }
 
 .queue-url {
-  flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -523,17 +521,21 @@ body {
   font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
   font-size: 13.5px;
   font-weight: 600;
+  align-self: center;
+  padding-left: 3px;
 }
 
 .queue-progress {
+  grid-column: 1 / -1;
+  position: relative;
   width: 100%;
-  height: 12px;
+  height: 28px;
   background: var(--paper);
   border: 3px solid var(--ink);
   border-radius: 8px;
   overflow: hidden;
   box-shadow: var(--shadow-sm);
-  margin-top: 8px;
+  margin-top: 0;
 }
 
 .queue-progress-fill {
@@ -542,10 +544,25 @@ body {
   transition: width 0.2s ease;
 }
 
+.queue-progress-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  pointer-events: none;
+}
+
 .item-remove {
   width: 30px;
   height: 30px;
   flex-shrink: 0;
+  align-self: center;
+  justify-self: end;
   font: inherit;
   font-weight: 900;
   line-height: 1;

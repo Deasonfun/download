@@ -227,26 +227,18 @@ fn render_queue_with_progress(
     for (i, url) in config.videos.iter().enumerate() {
         let url_escaped = html_escape(url);
         let pct = progress.get(url).copied().unwrap_or(0.0);
-        let pct_display = if pct > 0.0 {
-            format!(" {pct:.0}%")
-        } else {
-            String::new()
-        };
+        html.push_str(&format!("<li class=\"queue-item\">\n",));
         html.push_str(&format!(
-            "<li class=\"queue-item\"><span class=\"queue-index\">{}</span>\n",
-            i + 1
-        ));
-        html.push_str(&format!(
-            "<span class=\"queue-url\" title=\"{}\">{}{}</span>\n",
-            url_escaped, url_escaped, pct_display
+            "<span class=\"queue-url\" title=\"{}\">{}</span>\n",
+            url_escaped, url_escaped
         ));
         html.push_str(&format!(
             "<button class=\"item-remove\" hx-delete=\"/api/queue/{}\" hx-target=\"#queue-wrap\" hx-swap=\"innerHTML\" title=\"Remove\">✕</button>\n",
             i
         ));
         html.push_str(&format!(
-            "<div class=\"queue-progress\"><div class=\"queue-progress-fill\" style=\"width:{}%\"></div></div></li>\n",
-            pct
+            "<div class=\"queue-progress\"><div class=\"queue-progress-fill\" style=\"width:{}%\"></div><span class=\"queue-progress-label\">{:.0}%</span></div></li>\n",
+            pct, pct
         ));
     }
     html.push_str("</ul>");
@@ -369,9 +361,12 @@ async fn run(State(state): State<Arc<AppState>>) -> Response {
     }
 
     let Some(exe) = cli_exe() else {
+        let _ = state
+            .log_tx
+            .send("── error: download binary not found ──".to_string());
         return (
             StatusCode::INTERNAL_SERVER_ERROR,
-            "could not locate the download binary — run `cargo build --bins`",
+            Html("⚠ download binary not found — run `cargo build --bins` and restart".to_string()),
         )
             .into_response();
     };
@@ -395,13 +390,18 @@ async fn run(State(state): State<Arc<AppState>>) -> Response {
         Ok(child) => {
             *state.child.lock().unwrap() = Some(child);
             let _ = state.log_tx.send("── runner started ──".to_string());
-            StatusCode::OK.into_response()
+            Html("▶ download started — watch the Logs tab".to_string()).into_response()
         }
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("failed to start runner: {e}"),
-        )
-            .into_response(),
+        Err(e) => {
+            let _ = state
+                .log_tx
+                .send(format!("── error: failed to start runner: {e} ──"));
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Html(format!("⚠ failed to start runner: {e}")),
+            )
+                .into_response()
+        }
     }
 }
 
@@ -423,7 +423,8 @@ fn cli_exe() -> Option<PathBuf> {
     } else {
         "download"
     };
-    Some(dir.join(name))
+    let path = dir.join(name);
+    path.is_file().then_some(path)
 }
 
 // ---------- logs ----------
