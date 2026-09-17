@@ -40,10 +40,6 @@ pub async fn run_download(
     command_args.push(&config.download_dest);
     println!("Download dest: {}", config.download_dest);
 
-    command_args.push("-t");
-    command_args.push(config.video_format.as_str());
-    println!("Video format: {}", config.video_format);
-
     command_args.push("--ffmpeg-location");
     command_args.push(execs_dir.to_str().ok_or("Could not find path to ffmpeg")?);
 
@@ -56,7 +52,11 @@ pub async fn run_download(
             command_args.push("--audio-format");
             command_args.push(audio_format.as_str());
         }
-        false => (),
+        false => {
+            command_args.push("-t");
+            command_args.push(config.video_format.as_str());
+            println!("Video format: {}", config.video_format);
+        }
     }
 
     match config.thumbnail_export {
