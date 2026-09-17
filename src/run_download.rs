@@ -19,13 +19,33 @@ pub async fn run_download(
 
     let mut command_args = vec!["--no-part", "--force-overwrites"];
 
+    let deno_bin = if cfg!(windows) {
+        execs_dir.join("deno.exe")
+    } else {
+        execs_dir.join("deno")
+    };
+
+    let js_runtimes = if deno_bin.exists() {
+        Some(format!("deno:{}", deno_bin.to_string_lossy()))
+    } else {
+        None
+    };
+
+    if let Some(js_runtimes) = js_runtimes.as_ref() {
+        command_args.push("--js-runtimes");
+        command_args.push(js_runtimes.as_str());
+    }
+
     command_args.push("-P");
     command_args.push(&config.download_dest);
     println!("Download dest: {}", config.download_dest);
 
-    command_args.push("-f");
+    command_args.push("-t");
     command_args.push(config.video_format.as_str());
     println!("Video format: {}", config.video_format);
+
+    command_args.push("--ffmpeg-location");
+    command_args.push(execs_dir.to_str().ok_or("Could not find path to ffmpeg")?);
 
     let audio_format = config.audio_format;
 
@@ -35,8 +55,6 @@ pub async fn run_download(
             command_args.push("-x");
             command_args.push("--audio-format");
             command_args.push(audio_format.as_str());
-            command_args.push("--ffmpeg-location");
-            command_args.push(execs_dir.to_str().ok_or("Could not find path to ffmpeg")?);
         }
         false => (),
     }

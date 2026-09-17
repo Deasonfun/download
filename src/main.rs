@@ -15,7 +15,14 @@ use std::path::PathBuf;
 pub async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let execs_dir = PathBuf::from("libs");
 
-    if !execs_dir.exists() {
+    let yt_dlp_bin = execs_dir.join("yt-dlp");
+    let deno_bin = if cfg!(windows) {
+        execs_dir.join("deno.exe")
+    } else {
+        execs_dir.join("deno")
+    };
+
+    if !yt_dlp_bin.exists() || !deno_bin.exists() {
         download_libraries(execs_dir.clone()).await?;
     }
 
