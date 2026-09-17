@@ -17,8 +17,7 @@ pub async fn download_libraries(
         "windows" => {
             println!("Downloading libraries...");
 
-            let dlp_url =
-                "https://github.com/yt-dlp/yt-dlp/releases/download/2026.03.17/yt-dlp.exe";
+            let dlp_url = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe";
 
             std::fs::create_dir_all(&execs_dir)
                 .map_err(|e| format!("Could not create libraries directory: {e}"))?;
@@ -56,6 +55,8 @@ pub async fn download_libraries(
             fs::copy(ffprobe_bin, &execs_dir.join("ffprobe.exe"))?;
             let _ = fs::remove_file(PathBuf::from("libs/ffmpeg.zip"));
             let _ = fs::remove_dir_all(PathBuf::from("libs/ffmpeg-master-latest-win64-gpl"));
+
+            download_deno(&execs_dir).await?;
         }
         "macos" => {
             println!("Downloading libraries...");
@@ -128,12 +129,13 @@ pub async fn download_libraries(
                 std::fs::set_permissions(PathBuf::from("libs/ffmpeg"), perms)
                     .map_err(|e| format!("Could not set permission on ffmpeg: {e}"))?;
             }
+
+            download_deno(&execs_dir).await?;
         }
         "linux" => {
             println!("Downloading libraries...");
 
-            let dlp_url =
-                "https://github.com/yt-dlp/yt-dlp/releases/download/2026.03.17/yt-dlp_linux";
+            let dlp_url = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux";
 
             std::fs::create_dir_all(&execs_dir)
                 .map_err(|e| format!("Could not create libraries directory: {e}"))?;
@@ -188,8 +190,66 @@ pub async fn download_libraries(
                 std::fs::set_permissions(PathBuf::from("libs/ffmpeg"), perms)
                     .map_err(|e| format!("Could not set permission on ffmpeg: {e}"))?;
             }
+
+            download_deno(&execs_dir).await?;
         }
         _ => panic!("Your OS is not currently supported"),
     }
+    Ok(())
+}
+
+async fn download_deno(execs_dir: &PathBuf) -> std::result::Result<(), Box<dyn std::error::Error>> {
+    let deno_url = match (consts::OS, consts::ARCH) {
+        ("windows", _) => {
+            "https://github.com/denoland/deno/releases/latest/download/deno-x86_64-pc-windows-msvc.zip"
+        }
+        ("macos", "aarch64") => {
+            "https://github.com/denoland/deno/releases/latest/download/deno-aarch64-apple-darwin.zip"
+        }
+        ("macos", _) => {
+            "https://github.com/denoland/deno/releases/latest/download/deno-x86_64-apple-darwin.zip"
+        }
+        ("linux", "aarch64") => {
+            "https://github.com/denoland/deno/releases/latest/download/deno-aarch64-unknown-linux-gnu.zip"
+        }
+        ("linux", _) => {
+            "https://github.com/denoland/deno/releases/latest/download/deno-x86_64-unknown-linux-gnu.zip"
+        }
+        _ => {
+            return Err(format!(
+                "Unsupported platform for deno ({} {})",
+                consts::OS,
+                consts::ARCH
+            )
+            .into())
+        }
+    };
+
+    let deno_zip = execs_dir.join("deno.zip");
+    let mut file = File::create(&deno_zip)?;
+
+    let response = reqwest::get(deno_url)
+        .await
+        .map_err(|e| format!("There was an issue downloading deno: {e}"))?;
+    let bytes = response.bytes().await?;
+    file.write_all(&bytes)?;
+
+    let deno_file = File::open(&deno_zip)?;
+    let mut decompressor = ZipArchive::new(deno_file)?;
+    decompressor
+        .extract(execs_dir)
+        .map_err(|e| format!("Could not extract deno: {e}"))?;
+
+    let _ = fs::remove_file(&deno_zip);
+
+    #[cfg(unix)]
+    {
+        let deno_bin = execs_dir.join("deno");
+        let mut perms = std::fs::metadata(&deno_bin)?.permissions();
+        perms.set_mode(0o755);
+        std::fs::set_permissions(&deno_bin, perms)
+            .map_err(|e| format!("Could not set permission on deno: {e}"))?;
+    }
+
     Ok(())
 }
